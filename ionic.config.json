@@ -1,0 +1,7 @@
+{
+  "name": "Hi-Standardform",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue"
+}

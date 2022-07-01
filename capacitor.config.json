@@ -1,0 +1,6 @@
+{
+	"appId": "io.ionic.starter",
+	"appName": "Hi-Standardform",
+	"webDir": "dist",
+	"bundledWebRuntime": false
+}
