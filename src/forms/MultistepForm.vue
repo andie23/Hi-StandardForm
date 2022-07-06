@@ -30,9 +30,10 @@ import {
 } from "@ionic/vue"
 import FieldDataComposable from "@/composables/FieldData"
 import { FieldInterface } from '@/router/FieldInterfaces'
-import { find, findIndex, isEmpty } from 'lodash'
+import { find, isEmpty } from 'lodash'
 
 export default defineComponent({
+    emits: ['onNewActiveField'],
     components: {
         IonPage,
         IonHeader,
@@ -43,7 +44,8 @@ export default defineComponent({
     },
     props: {
         onFinish: {
-            type: Function
+            type: Function,
+            required: true
         },
         skipSummary: {
             type: Boolean,
@@ -61,7 +63,7 @@ export default defineComponent({
             type: String
         }
     },
-    setup(prop) {
+    setup(prop, { emit }) {
         const {
             fieldData,
             activeField,
@@ -90,7 +92,7 @@ export default defineComponent({
             let initialIndex = 0
             if (!isEmpty(activeField.value)) {
                 if ((await computeFieldData())) {
-                    initialIndex = (getFieldDataAttr(activeField.value, 'index') + 1) // increment to next field
+                    initialIndex = (getFieldDataAttr(activeField.value, 'index') || 0) + 1 // increment to next field
                 } else {
                     return
                 }
@@ -127,16 +129,18 @@ export default defineComponent({
             }
         }
 
-        function navTo(fieldID: string) {
+        async function navTo(fieldID: string) {
             if (fieldID === '_NEXT_FIELD_') {
-                return goNext()
-            }
-            const field = find(prop.fields, { id: fieldID })
-            if (field) {
-                setActiveField(field)
+                await goNext()
             } else {
-                console.warn(`field ${fieldID} not found!`)
+                const field = find(prop.fields, { id: fieldID })
+                if (field) {
+                    setActiveField(field)
+                } else {
+                    console.warn(`field ${fieldID} not found!`)
+                }
             }
+            emit('onNewActiveField', fieldID)    
         }
 
         watch(() => prop.activeFieldName, (name) => {
