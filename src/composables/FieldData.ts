@@ -225,7 +225,7 @@ async function setActiveField(newField: FieldInterface) {
 
     await executeHook(newField, 'onload')
 
-    if (!fieldData.value[newField.id].init) {
+    if (!getFieldDataAttr(newField, 'init')) {
         setFieldDataAttr(newField, true, 'init')
         const val = await executeHook(newField, 'defaultValue')
         if (typeof val === "string") {
@@ -236,6 +236,7 @@ async function setActiveField(newField: FieldInterface) {
     }
 
     const helpText = await executeHook(newField, 'dynamicHelpText')
+
     setFieldDataAttr(newField, helpText || newField.helpText, 'helpText')
 
     const options = await executeHook(newField, 'options')
