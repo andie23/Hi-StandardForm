@@ -47,10 +47,6 @@ export default defineComponent({
             type: Function,
             required: true
         },
-        skipSummary: {
-            type: Boolean,
-            default: false,
-        },
         activeFieldName: {
             type: String,
             default: ''
