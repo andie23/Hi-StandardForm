@@ -5,6 +5,31 @@ export interface Option {
     other?: any;
 }
 
+export interface FieldNavButton {
+    name: string;
+    color?: 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'info' | 'light' | 'dark';
+    state?: {
+        colorChange: {
+            default?: (value: FieldDataInterface, fields: Record<string, FieldDataInterface>) => Promise<boolean> | boolean;
+            onValue?: (value: FieldDataInterface, fields: Record<string, FieldDataInterface>) => Promise<boolean> | boolean;
+        }
+        disabled?: {
+            default?: (value: FieldDataInterface, fields: Record<string, FieldDataInterface>) => Promise<boolean> | boolean;
+            onValue?: (value: FieldDataInterface, fields: Record<string, FieldDataInterface>) => Promise<boolean> | boolean;
+        },
+        visible?: {
+            default?: (value: FieldDataInterface, fields: Record<string, FieldDataInterface>) => Promise<boolean> | boolean;
+            onValue?: (value: FieldDataInterface, fields: Record<string, FieldDataInterface>) => Promise<boolean> | boolean;
+        }
+    },
+    clickHandler: {
+        doAction?: () => void;
+        addValue?: () => (value: FieldDataInterface, fields: Record<string, FieldDataInterface>) => Promise<Option | Option[]> | Option | Option[];
+        updateListOptions?: () => (value: FieldDataInterface, fields: Record<string, FieldDataInterface>) => Promise<Option | Option[]> | Option | Option[];
+    },
+    slot?: 'start' | 'end';
+}
+
 export interface FieldDataInterface {
     index: number;
     init?: boolean;
@@ -116,4 +141,9 @@ export interface FieldInterface {
     options?: (value: FieldDataInterface, fields: Record<string, FieldDataInterface>) => Promise<Option[]> | Array<Option>;
     requireNext?: boolean;
     config?: Record<string, any>;
+    navButtons?: {
+        hide?: string[];
+        override?: (value: FieldDataInterface, fields: Record<string, FieldDataInterface>) => Record<'Cancel' | 'Clear' | 'Next' | 'Finish', FieldNavButton>;
+        custom?: (value: FieldDataInterface, fields: Record<string, FieldDataInterface>) => FieldNavButton[];
+    }
 }
