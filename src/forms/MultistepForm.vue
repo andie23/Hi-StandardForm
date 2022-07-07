@@ -8,11 +8,12 @@
             </ion-toolbar>
         </ion-header>
         <ion-content>
-            <!-- Dynamic form elements come here -->
+            <slot :field="activeField" :actions="{ setValue }"></slot>
         </ion-content>
         <ion-footer>
             <ion-toolbar color="dark">
-                <ion-button v-for="(btn, index) in footerBtns" 
+                <ion-button
+                    v-for="(btn, index) in footerBtns" 
                     :key="index"
                     v-show="btn.visible"
                     :slot="btn.slot"
@@ -27,7 +28,6 @@
         </ion-footer>
     </ion-page>
 </template>
-
 <script lang="ts">
 import { 
     computed, 
@@ -258,8 +258,10 @@ export default defineComponent({
         })
 
         return {
+            activeField,
             helpText,
             footerBtns,
+            setValue,
             onBtnClick
         }
     }
