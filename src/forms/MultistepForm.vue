@@ -2,12 +2,12 @@
     <ion-page> 
         <ion-header> 
             <ion-toolbar>
-                <ion-title> 
-                    <!--Title goes here-->
+                <ion-title>
+                    {{ helpText }}
                 </ion-title>
             </ion-toolbar>
         </ion-header>
-        <ion-content> 
+        <ion-content>
             <!-- Dynamic form elements come here -->
         </ion-content>
         <ion-footer>
@@ -117,7 +117,7 @@ export default defineComponent({
             try {
                 if (typeof prop.onFinish === 'function') {
                     if ((await computeFieldData())) {
-                        await prop.onFinish(fieldData.value)
+                        await prop.onFinish(fieldData)
                     }
                 }
             } catch (e) {
@@ -160,8 +160,7 @@ export default defineComponent({
             for (let i=initialIndex; i >= 0; --i) {
                 const field = prop.fields[i]
                 if (getFieldDataAttr(activeField, 'isAvailable')) {
-                    setActiveField(field)
-                    return
+                    return setActiveField(field)
                 }
             }
         }
@@ -248,12 +247,18 @@ export default defineComponent({
             deep: true, 
             immediate: true
         })
-        const footerBtns = computed(() => {
-            return !isEmpty(activeField) 
-                ? fieldData[activeField.id].navButtonProps
-                : []
+
+        const helpText = computed(() => {
+            return getFieldDataAttr(activeField, 'helpText', false) 
+                || 'N/A'
         })
+
+        const footerBtns = computed(() => {
+            return getFieldDataAttr(activeField, 'navButtonProps', false) || []
+        })
+
         return {
+            helpText,
             footerBtns,
             onBtnClick
         }
