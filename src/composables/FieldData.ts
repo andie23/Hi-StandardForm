@@ -1,4 +1,4 @@
-import { ref, reactive } from 'vue'
+import { reactive } from 'vue'
 import { 
     Option,
     FieldInterface, 
@@ -147,16 +147,23 @@ function buildAndSetFieldData(
             defaultValue: null,
             navButtonProps: []
         }
+        let defaultBtns = [...footerButtons] 
         const allButtons: Record<string, FieldNavButton> = {}
         const customBtns = field?.navButtons?.custom || []
 
+        // Hide default buttons if specified to do so
+        if (!isEmpty(field.navButtons?.hide)) {
+            defaultBtns = defaultBtns.filter((btn) => {
+                return !(field.navButtons?.hide || []).includes(btn.name as any)
+            })
+        }
         // Map unique button indexes
         if (!isEmpty(customBtns)) {
-            [...footerButtons, ...customBtns].forEach((btn) => {
+            [...defaultBtns, ...customBtns].forEach((btn) => {
                 allButtons[btn.index] = btn
             })
         } else {
-            footerButtons.forEach((btn) => allButtons[btn.index] = btn)
+            defaultBtns.forEach((btn) => allButtons[btn.index] = btn)
         }
         // create button props
         Object.values(allButtons)
