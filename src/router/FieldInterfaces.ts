@@ -6,10 +6,11 @@ export interface Option {
 }
 
 export interface FieldNavButton {
+    index: number;
     name: string;
     color?: 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'info' | 'light' | 'dark';
     state?: {
-        colorChange: {
+        color: {
             default?: (value: FieldDataInterface, fields: Record<string, FieldDataInterface>) => Promise<boolean> | boolean;
             onValue?: (value: FieldDataInterface, fields: Record<string, FieldDataInterface>) => Promise<boolean> | boolean;
         }
@@ -21,13 +22,27 @@ export interface FieldNavButton {
             default?: (value: FieldDataInterface, fields: Record<string, FieldDataInterface>) => Promise<boolean> | boolean;
             onValue?: (value: FieldDataInterface, fields: Record<string, FieldDataInterface>) => Promise<boolean> | boolean;
         }
-    },
+    };
+    cssClass?: string;
+    size?: 'large' | 'small';
     clickHandler: {
         doAction?: () => void;
         addValue?: () => (value: FieldDataInterface, fields: Record<string, FieldDataInterface>) => Promise<Option | Option[]> | Option | Option[];
         updateListOptions?: () => (value: FieldDataInterface, fields: Record<string, FieldDataInterface>) => Promise<Option | Option[]> | Option | Option[];
-    },
+    };
     slot?: 'start' | 'end';
+}
+
+export interface FieldDataButtonProps {
+    name: string;
+    index: number;
+    color?: 'danger' | 'success' | 'warning' | 'primary';
+    disabled?: boolean;
+    visible?: boolean;
+    size?: 'large' | 'small';
+    slot?: 'start' | 'end';
+    cssClass?: string;
+    btnRef: FieldNavButton;
 }
 
 export interface FieldDataInterface {
@@ -43,8 +58,15 @@ export interface FieldDataInterface {
     defaultValue?: Option | Option[] | null;
     isDirty?: boolean;
     intLastTimeLoaded?: number;
+    navButtonProps: FieldDataButtonProps[];
 }
 
+/**
+ * if (f.district.isDirty && f.district.inLastTimeLoaded > current.inLastTimeLoaded) {
+ *  return []
+ * } else {
+ * }
+ */
 export interface FieldInterface {
     /** 
      * Uniquely identifies a field
@@ -142,8 +164,7 @@ export interface FieldInterface {
     requireNext?: boolean;
     config?: Record<string, any>;
     navButtons?: {
-        hide?: string[];
-        override?: (value: FieldDataInterface, fields: Record<string, FieldDataInterface>) => Record<'Cancel' | 'Clear' | 'Next' | 'Finish', FieldNavButton>;
-        custom?: (value: FieldDataInterface, fields: Record<string, FieldDataInterface>) => FieldNavButton[];
+        hide?: Array<"Clear" | "Cancel" | 'Next' | 'Back' | 'Finish'>;
+        custom?: FieldNavButton[];
     }
 }
