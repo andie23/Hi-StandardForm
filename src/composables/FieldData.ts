@@ -1,13 +1,14 @@
-import { ref } from 'vue'
+import { ref, reactive } from 'vue'
 import { 
     Option,
     FieldInterface, 
-    FieldDataInterface
+    FieldDataInterface,
+    FieldNavButton,
 } from '@/router/FieldInterfaces'
 import { isEmpty, isEqual } from "lodash"
 
-const activeField = ref({} as FieldInterface)
-const fieldData = ref({} as Record<string, FieldDataInterface>)
+let activeField = reactive({} as FieldInterface)
+const fieldData = reactive({} as Record<string, FieldDataInterface>)
 
 /**
  * Run callback hooks defined for a field. Each hook is given field parameters
@@ -39,8 +40,8 @@ async function executeHook(
     ) {
     if (hook in field && typeof field[hook] === 'function') {
         return field[hook](
-            {...fieldData.value[field.id]}, 
-            {...fieldData.value}
+            {...fieldData[field.id]}, 
+            {...fieldData}
         )
     }
 }
@@ -58,8 +59,9 @@ function getFieldDataAttr(
     'errors' |
     'intLastTimeLoaded' |
     'formValue' |
+    'navButtonProps' |
     'isDirty') {
-    return fieldData.value[field.proxyID || field.id][attr] || null
+    return fieldData[field.proxyID || field.id][attr] || null
 }
 
 /**
@@ -85,9 +87,9 @@ function setFieldDataAttr(
     ) {
     if (attr in field) {
         if (field.proxyID && canUpdateParentProxy) {
-            fieldData.value[field.proxyID] = data
+            fieldData[field.proxyID] = data
         }
-        fieldData.value[field.id] = data
+        fieldData[field.id] = data
 
     } else {
         console.warn('Cannot set field data with no mounted field')
@@ -95,13 +97,20 @@ function setFieldDataAttr(
 }
 
 function updateActiveFieldListOptions(options: Option[]) {
-    setFieldDataAttr(activeField.value, options, 'listOptions')
+    setFieldDataAttr(activeField, options, 'listOptions')
 }
 
-function buildAndSetFieldData(fields: FieldInterface[]) {
-    fieldData.value = {}
+function buildAndSetFieldData(
+    fields: FieldInterface[], 
+    footerButtons: FieldNavButton[]) {
+    // Clear out any existing data
+    Object.keys(fieldData).forEach((key) => {
+        delete fieldData[key]
+    })
+    // initialise a fields data object. This will track all state for that
+    // field
     fields.forEach((field, index) => {
-        const initialData = {
+        const initialData: FieldDataInterface = {
             index,
             init: false,
             helpText: '',
@@ -111,12 +120,41 @@ function buildAndSetFieldData(fields: FieldInterface[]) {
             computedValue: null,
             listOptions: [], 
             formValue: null,
-            defaultValue: null
+            defaultValue: null,
+            navButtonProps: []
         }
+        const allButtons: Record<string, FieldNavButton> = {}
+        const customBtns = field?.navButtons?.custom || []
+
+        // Map unique button indexes
+        if (!isEmpty(customBtns)) {
+            [...footerButtons, ...customBtns].forEach((btn) => {
+                allButtons[btn.index] = btn
+            })
+        } else {
+            footerButtons.forEach((btn) => allButtons[btn.index] = btn)
+        }
+        // create button props
+        Object.values(allButtons)
+            .sort((a, b) => a.index - b.index)
+            .forEach((b) => {
+                initialData.navButtonProps.push({
+                    name: b.name,
+                    index: b.index,
+                    color: 'primary',
+                    disabled: false,
+                    visible: true,
+                    slot: b.slot || 'start',
+                    size: b.size || 'large',
+                    cssClass: b.cssClass || '',
+                    btnRef: b
+                })
+            })
+
         if (field.proxyID) {
-            fieldData.value[field.proxyID] = initialData
+            fieldData[field.proxyID] = initialData
         }
-        fieldData.value[field.id] = initialData
+        fieldData[field.id] = initialData
    })
 }
 
@@ -126,7 +164,7 @@ function buildAndSetFieldData(fields: FieldInterface[]) {
  * @returns 
  */
 async function setValue(val: Option | Option[]) {
-    const field = { ...activeField.value }
+    const field = { ...activeField }
 
     if (isEmpty(field)) {
         return console.warn('No field is active to set value to')
@@ -156,7 +194,7 @@ async function setValue(val: Option | Option[]) {
  * @returns 
  */
 async function computeFieldData() {
-    const field = {...activeField.value}
+    const field = {...activeField}
     const val = getFieldDataAttr(field, 'formValue')
     const required = await executeHook(field, 'isRequired')
     setFieldDataAttr(field, required || false, 'isRequired', false)
@@ -178,7 +216,7 @@ async function computeFieldData() {
 }
 
 function clearFieldData() {
-    const field = {...activeField.value}
+    const field = {...activeField}
     if (!isEmpty(field)) {
         setFieldDataAttr(field, null, 'errors')
         setFieldDataAttr(field, null, 'formValue')
@@ -215,13 +253,13 @@ async function onFieldCondition(field: FieldInterface) {
  * @param newField 
 */
 async function setActiveField(newField: FieldInterface) {
-    const curField = {...activeField.value}
+    const curField = {...activeField}
 
     if (!isEmpty(curField)) {
         await executeHook(curField, 'unload')
     }
 
-    activeField.value = newField
+    activeField = newField
 
     await executeHook(newField, 'onload')
 
@@ -243,7 +281,7 @@ async function setActiveField(newField: FieldInterface) {
 
     setFieldDataAttr(newField, options || [], 'listOptions')
 
-    setFieldDataAttr(activeField.value, new Date().getTime(), 'intLastTimeLoaded')
+    setFieldDataAttr(activeField, new Date().getTime(), 'intLastTimeLoaded')
 }
 
 export default function FieldDataComposable() {

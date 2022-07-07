@@ -11,8 +11,20 @@
             <!-- Dynamic form elements come here -->
         </ion-content>
         <ion-footer>
-            <ion-toolbar>
-                <!-- Footer buttons come here --> 
+            <ion-toolbar color="dark">
+                <ion-button
+                    v-for="(btn, index) in footerBtns"
+                    :key="index"
+                    :slot="btn.slot || 'start'"
+                    :class="btn.cssClass || ''"
+                    @click="onBtnClick(btn)"
+                    :color="btn.color || 'primary'"
+                    :size="btn.size || 'large'"
+                    :disabled="onDisable(btn)"
+                    v-show="onVisible(btn)"
+                >
+                {{ btn.name }}
+            </ion-button>
             </ion-toolbar>
         </ion-footer>
     </ion-page>
@@ -26,13 +38,15 @@ import {
     IonTitle,
     IonContent,
     IonToolbar,
-    IonFooter
+    IonFooter,
+    IonButton
 } from "@ionic/vue"
 import FieldDataComposable from "@/composables/FieldData"
 import { FieldInterface } from '@/router/FieldInterfaces'
 import { find, isEmpty } from 'lodash'
 
 export default defineComponent({
+    name: 'MultistepForm',
     emits: ['onNewActiveField'],
     components: {
         IonPage,
@@ -40,7 +54,8 @@ export default defineComponent({
         IonTitle,
         IonContent,
         IonToolbar,
-        IonFooter
+        IonFooter,
+        IonButton
     },
     props: {
         onFinish: {
@@ -55,8 +70,9 @@ export default defineComponent({
             type: Object as PropType<FieldInterface[]>,
             required: true
         },
-        cancelDestinationPath: {
-            type: String
+        onCancel: {
+            type: Function,
+            required: false
         }
     },
     setup(prop, { emit }) {
@@ -86,9 +102,9 @@ export default defineComponent({
 
         async function goNext() {
             let initialIndex = 0
-            if (!isEmpty(activeField.value)) {
+            if (!isEmpty(activeField)) {
                 if ((await computeFieldData())) {
-                    initialIndex = (getFieldDataAttr(activeField.value, 'index') || 0) + 1 // increment to next field
+                    initialIndex = (getFieldDataAttr(activeField, 'index') || 0) + 1 // increment to next field
                 } else {
                     return
                 }
@@ -113,12 +129,12 @@ export default defineComponent({
 
         function goBack() {
             let initialIndex = 0
-            if (isEmpty(activeField.value)) {
-                initialIndex = getFieldDataAttr(activeField.value, 'index')
+            if (isEmpty(activeField)) {
+                initialIndex = getFieldDataAttr(activeField, 'index')
             }
             for (let i=initialIndex; i >= 0; --i) {
                 const field = prop.fields[i]
-                if (getFieldDataAttr(activeField.value, 'isAvailable')) {
+                if (getFieldDataAttr(activeField, 'isAvailable')) {
                     setActiveField(field)
                     return
                 }
@@ -146,14 +162,64 @@ export default defineComponent({
         // Initiate and render new fields
         watch(() => prop.fields, (fields) => {
             if (!isEmpty(fields)) {
-                buildAndSetFieldData(fields)
+                buildAndSetFieldData(
+                    fields,
+                    [
+                       {
+                            index: 0,
+                            name: 'Cancel',
+                            slot: 'start',
+                            color: 'danger',
+                            clickHandler: {
+                                doAction() {
+                                   if (typeof prop.onCancel === 'function') {
+                                       prop.onCancel()
+                                   }
+                                }
+                            }
+                       },
+                       {
+                           index: 20, 
+                           name: 'Clear',
+                           slot: 'end',
+                           color: 'warning',
+                           clickHandler: {
+                               doAction() {
+                                   clearFieldData()
+                               }
+                           }
+                       },
+                       {
+                           index: 21,
+                           name: 'Back',
+                           slot: 'end',
+                           clickHandler: {
+                               doAction() {
+                                    goBack()
+                               }
+                           }
+                       },
+                       {
+                            index: 22,
+                            name: 'Next',
+                            slot: 'end',
+                            color: 'success',
+                            clickHandler: {
+                                doAction() {
+                                    goNext()
+                                }
+                            }
+                       },
+                    ]
+                )
                 if (typeof prop.activeFieldName === 'string' && prop.activeFieldName) {
                     navTo(prop.activeFieldName)
                 } else {
                     navTo('_NEXT_FIELD_')
                 }
             }
-        }, {
+        }, 
+        {
             deep: true, 
             immediate: true
         })
