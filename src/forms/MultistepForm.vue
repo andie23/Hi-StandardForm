@@ -12,26 +12,29 @@
         </ion-content>
         <ion-footer>
             <ion-toolbar color="dark">
-                <ion-button
-                    v-for="(btn, index) in footerBtns"
+                <ion-button v-for="(btn, index) in footerBtns" 
                     :key="index"
-                    :slot="btn.slot || 'start'"
-                    :class="btn.cssClass || ''"
-                    @click="onBtnClick(btn)"
-                    :color="btn.color || 'primary'"
-                    :size="btn.size || 'large'"
-                    :disabled="onDisable(btn)"
-                    v-show="onVisible(btn)"
-                >
+                    v-show="btn.visible"
+                    :slot="btn.slot"
+                    :class="btn.cssClass"
+                    :color="btn.color"
+                    :size="btn.size"
+                    :disabled="btn.disabled"
+                    @click="onBtnClick(btn)">
                 {{ btn.name }}
-            </ion-button>
+                </ion-button>
             </ion-toolbar>
         </ion-footer>
     </ion-page>
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, watch } from 'vue'
+import { 
+    computed, 
+    defineComponent, 
+    PropType, 
+    watch 
+} from 'vue'
 import {
     IonPage,
     IonHeader,
@@ -42,7 +45,7 @@ import {
     IonButton
 } from "@ionic/vue"
 import FieldDataComposable from "@/composables/FieldData"
-import { FieldInterface } from '@/router/FieldInterfaces'
+import { FieldDataButtonProps, FieldInterface, Option } from '@/router/FieldInterfaces'
 import { find, isEmpty } from 'lodash'
 
 export default defineComponent({
@@ -85,8 +88,30 @@ export default defineComponent({
             computeFieldData,
             onFieldCondition,
             setActiveField,
-            clearFieldData
+            setValue,
+            clearFieldData,
+            updateActiveFieldListOptions
         } = FieldDataComposable()
+
+        function onBtnClick(btn: FieldDataButtonProps) {
+            const handlers = btn.btnRef.clickHandler
+            const value = {...fieldData[activeField.id]}
+            const data = {...fieldData}
+
+            if (typeof handlers.addValue === 'function') {
+                setValue(handlers.addValue(value, data) as Option | Option [])
+            }
+
+            if (typeof handlers.doAction === 'function') {
+                handlers.doAction(value, data)
+            }
+
+            if (typeof handlers.updateListOptions === 'function') {
+                updateActiveFieldListOptions(
+                    handlers.updateListOptions(value, data) as Option[]
+                )
+            }
+        }
 
         async function finish() {
             try {
@@ -223,6 +248,15 @@ export default defineComponent({
             deep: true, 
             immediate: true
         })
+        const footerBtns = computed(() => {
+            return !isEmpty(activeField) 
+                ? fieldData[activeField.id].navButtonProps
+                : []
+        })
+        return {
+            footerBtns,
+            onBtnClick
+        }
     }
 })
 </script>

@@ -26,9 +26,9 @@ export interface FieldNavButton {
     cssClass?: string;
     size?: 'large' | 'small';
     clickHandler: {
-        doAction?: () => void;
-        addValue?: () => (value: FieldDataInterface, fields: Record<string, FieldDataInterface>) => Promise<Option | Option[]> | Option | Option[];
-        updateListOptions?: () => (value: FieldDataInterface, fields: Record<string, FieldDataInterface>) => Promise<Option | Option[]> | Option | Option[];
+        doAction?: (value: FieldDataInterface, fields: Record<string, FieldDataInterface>) => void;
+        addValue?: (value: FieldDataInterface, fields: Record<string, FieldDataInterface>) => Promise<Option | Option[]> | Option | Option[];
+        updateListOptions?: (value: FieldDataInterface, fields: Record<string, FieldDataInterface>) => Promise<Option | Option[]> | Option | Option[];
     };
     slot?: 'start' | 'end';
 }
