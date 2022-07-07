@@ -65,6 +65,30 @@ function getFieldDataAttr(
 }
 
 /**
+ * Changes buttons states based on specified event. 
+ * This can be either to disable, change color or show/hide based on
+ * whether the value changed or if it's  a default state
+ * @param field 
+ * @param event 
+ */
+function updateButtonStates(field: FieldInterface, event: 'default' | 'onValue') {
+    const buttons = fieldData[field.id].navButtonProps
+    buttons.forEach((btn) => {
+        if ('state' in btn?.btnRef) {
+            const states: Record<string, any> = btn.btnRef?.state || {}
+            for (const p in states) {
+                const state = states[p]
+                const data = fieldData[field.id]
+                btn[p as 'color' | 'disabled' | 'visible'] = state[event](
+                    {...data},
+                    {...fieldData}
+                )
+            }
+        }
+    })
+}
+
+/**
  * Write to a field's data object
  * @param data 
  * @param attr 
@@ -180,6 +204,9 @@ async function setValue(val: Option | Option[]) {
 
     setFieldDataAttr(field, val || null, 'formValue')
 
+    // Buttons should react when new value is added
+    updateButtonStates(field, 'onValue')
+
     const listUpdate = await executeHook(field, 'onValueUpdate')
 
     if (listUpdate) setFieldDataAttr(field, listUpdate, 'listOptions', false)
@@ -272,6 +299,9 @@ async function setActiveField(newField: FieldInterface) {
             await setValue(val)
         }
     }
+
+    // Buttons should react when field is initially loaded
+    updateButtonStates(newField, 'default')
 
     const helpText = await executeHook(newField, 'dynamicHelpText')
 
