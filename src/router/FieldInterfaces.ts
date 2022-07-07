@@ -10,7 +10,7 @@ export interface FieldNavButton {
     name: string;
     color?: 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'info' | 'light' | 'dark';
     state?: {
-        color: {
+        color?: {
             default?: (value: FieldDataInterface, fields: Record<string, FieldDataInterface>) => Promise<boolean> | boolean;
             onValue?: (value: FieldDataInterface, fields: Record<string, FieldDataInterface>) => Promise<boolean> | boolean;
         }
