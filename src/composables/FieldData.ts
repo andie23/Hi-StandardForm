@@ -4,6 +4,7 @@ import {
     FieldInterface, 
     FieldDataInterface,
     FieldNavButton,
+    FieldDataButtonProps,
 } from '@/router/FieldInterfaces'
 import { isEmpty, isEqual } from "lodash"
 
@@ -60,8 +61,15 @@ function getFieldDataAttr(
     'intLastTimeLoaded' |
     'formValue' |
     'navButtonProps' |
-    'isDirty') {
-    return fieldData[field.proxyID || field.id][attr] || null
+    'isDirty',
+    useProxy=true) {
+    let val = null
+    if (useProxy && field.proxyID) { 
+        val = fieldData[field.proxyID][attr]
+    } else {
+        val = fieldData[field.id][attr]
+    }
+    return val
 }
 
 /**
@@ -72,8 +80,8 @@ function getFieldDataAttr(
  * @param event 
  */
 function updateButtonStates(field: FieldInterface, event: 'default' | 'onValue') {
-    const buttons = fieldData[field.id].navButtonProps
-    buttons.forEach((btn) => {
+    const buttons = getFieldDataAttr(field, 'navButtonProps', false)
+    buttons.forEach((btn: FieldDataButtonProps) => {
         if ('state' in btn?.btnRef) {
             const states: Record<string, any> = btn.btnRef?.state || {}
             for (const p in states) {
