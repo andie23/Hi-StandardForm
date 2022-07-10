@@ -154,6 +154,7 @@ function buildAndSetFieldData(
             defaultValue: null,
             navButtonProps: [],
             valueClearCount: 0,
+            isDirty: false,
             _def: field
         }
         let defaultBtns = [...footerButtons] 
