@@ -1,68 +1,59 @@
 <template>
   <ion-page>
-    <ion-header :translucent="true">
-      <ion-toolbar>
-        <ion-title>Blank</ion-title>
-      </ion-toolbar>
-    </ion-header>
-    
-    <ion-content :fullscreen="true">
-      <ion-header collapse="condense">
-        <ion-toolbar>
-          <ion-title size="large">Blank</ion-title>
-        </ion-toolbar>
-      </ion-header>
-    
-      <div id="container">
-        <strong>Ready to create an app?</strong>
-        <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
-      </div>
-    </ion-content>
+    <multistep-form
+        :fields="fields"
+        :onFinish="onFinish"
+        :onCancel="onCancel"        
+      >
+      <template v-slot="{id, type}"> 
+        <keep-alive>
+          <component :key="id" :is="type"/>
+        </keep-alive>
+      </template>
+    </multistep-form>
   </ion-page>
 </template>
 
 <script lang="ts">
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar } from '@ionic/vue';
+import { IonPage } from '@ionic/vue';
 import { defineComponent } from 'vue';
+import TextInput from "@/components/TextInput.vue"
+import MultistepForm from "@/forms/MultistepForm.vue"
+import { FieldDataInterface, FieldInterface } from '@/router/FieldInterfaces';
 
 export default defineComponent({
   name: 'HomePage',
   components: {
-    IonContent,
-    IonHeader,
     IonPage,
-    IonTitle,
-    IonToolbar
+    TextInput,
+    MultistepForm
+  },
+  setup() {
+    const fields: FieldInterface[] = [
+      {
+        id: 'first_name',
+        helpText: 'First name',
+        type: 'text-input',
+        isRequired: () => true
+      },
+      {
+        id: 'last_name',
+        helpText: 'Last name',
+        type: 'text-input',
+        isRequired: () => true
+      }
+    ]
+    function onFinish(data: Record<string, FieldDataInterface>) {
+      console.log('onFinish', data)
+    }
+    function  onCancel() {
+      console.log('Cancel button pressed!')
+    }
+    return {
+      fields,
+      onFinish,
+      onCancel
+    }
   }
 });
 </script>
-
-<style scoped>
-#container {
-  text-align: center;
-  
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-#container strong {
-  font-size: 20px;
-  line-height: 26px;
-}
-
-#container p {
-  font-size: 16px;
-  line-height: 22px;
-  
-  color: #8c8c8c;
-  
-  margin: 0;
-}
-
-#container a {
-  text-decoration: none;
-}
-</style>
