@@ -2,13 +2,17 @@
     <ion-page> 
         <ion-header> 
             <ion-toolbar>
-                <ion-title>
+                <ion-title 
+                    :color="errors.length ? 'danger' : ''">
                     {{ helpText }}
+                    <b v-if="isRequired">
+                        (*)
+                    </b>
                 </ion-title>
             </ion-toolbar>
         </ion-header>
         <ion-content>
-            <slot :field="activeField" :actions="{ setValue }"></slot>
+            <slot :id="activeFieldName" :type="'text-input'"></slot>
         </ion-content>
         <ion-footer>
             <ion-toolbar color="dark">
@@ -33,6 +37,7 @@ import {
     computed, 
     defineComponent, 
     PropType, 
+    ref, 
     watch 
 } from 'vue'
 import {
@@ -45,8 +50,12 @@ import {
     IonButton
 } from "@ionic/vue"
 import FieldDataComposable from "@/composables/FieldData"
-import { FieldDataButtonProps, FieldInterface, Option } from '@/router/FieldInterfaces'
-import { find, isEmpty } from 'lodash'
+import { 
+    FieldDataButtonProps, 
+    FieldInterface, 
+    Option 
+} from '@/router/FieldInterfaces'
+import { isEmpty } from 'lodash'
 
 export default defineComponent({
     name: 'MultistepForm',
@@ -65,7 +74,7 @@ export default defineComponent({
             type: Function,
             required: true
         },
-        activeFieldName: {
+        activeField: {
             type: String,
             default: ''
         },
@@ -81,25 +90,26 @@ export default defineComponent({
     setup(prop, { emit }) {
         const {
             fieldData,
-            activeField,
+            activeFieldName,
+            getActiveFieldData,
             getFieldDataAttr,
             executeHook,
             buildAndSetFieldData,
             computeFieldData,
             onFieldCondition,
+            setActiveFieldValue,
             setActiveField,
-            setValue,
             clearFieldData,
             updateActiveFieldListOptions
         } = FieldDataComposable()
 
         function onBtnClick(btn: FieldDataButtonProps) {
             const handlers = btn.btnRef.clickHandler
-            const value = {...fieldData[activeField.id]}
+            const value = {...fieldData[activeFieldName.value]}
             const data = {...fieldData}
 
             if (typeof handlers.addValue === 'function') {
-                setValue(handlers.addValue(value, data) as Option | Option [])
+                setActiveFieldValue(handlers.addValue(value, data) as Option | Option [])
             }
 
             if (typeof handlers.doAction === 'function') {
@@ -127,9 +137,9 @@ export default defineComponent({
 
         async function goNext() {
             let initialIndex = 0
-            if (!isEmpty(activeField)) {
+            if (!isEmpty(activeFieldName.value)) {
                 if ((await computeFieldData())) {
-                    initialIndex = (getFieldDataAttr(activeField, 'index') || 0) + 1 // increment to next field
+                    initialIndex = (getFieldDataAttr(activeFieldName.value, 'index') || 0) + 1 // increment to next field
                 } else {
                     return
                 }
@@ -138,14 +148,15 @@ export default defineComponent({
             if (initialIndex <= totalFields) {
                 for (let i=initialIndex; i < totalFields; ++i) {
                     const field = prop.fields[i]
-                    if (!(await onFieldCondition(field))) {
+                    if (!(await onFieldCondition(`${field.id}`))) {
                         continue
                     }
                     // Close the form here if its final page
-                    if ((await executeHook(field, 'exitsForm'))) {
+                    if ((await executeHook(`${field.id}`, 'exitsForm'))) {
                         break
                     }
-                    await setActiveField(field)
+                    await setActiveField(`${field.id}`)
+                    console.log(field.id)
                     return
                 }
                 finish()
@@ -154,13 +165,13 @@ export default defineComponent({
 
         function goBack() {
             let initialIndex = 0
-            if (isEmpty(activeField)) {
-                initialIndex = getFieldDataAttr(activeField, 'index')
+            if (isEmpty(activeFieldName.value)) {
+                initialIndex = getFieldDataAttr(activeFieldName.value, 'index')
             }
             for (let i=initialIndex; i >= 0; --i) {
                 const field = prop.fields[i]
-                if (getFieldDataAttr(activeField, 'isAvailable')) {
-                    return setActiveField(field)
+                if (getFieldDataAttr(activeFieldName.value, 'isAvailable')) {
+                    return setActiveField(`${field.id}`)
                 }
             }
         }
@@ -169,9 +180,8 @@ export default defineComponent({
             if (fieldID === '_NEXT_FIELD_') {
                 await goNext()
             } else {
-                const field = find(prop.fields, { id: fieldID })
-                if (field) {
-                    setActiveField(field)
+                if (fieldID in fieldData) {
+                    setActiveField(fieldID)
                 } else {
                     console.warn(`field ${fieldID} not found!`)
                 }
@@ -179,7 +189,7 @@ export default defineComponent({
             emit('onNewActiveField', fieldID)    
         }
 
-        watch(() => prop.activeFieldName, (name) => {
+        watch(() => prop.activeField, (name) => {
             if (name) navTo(name)
         })
 
@@ -209,7 +219,7 @@ export default defineComponent({
                            color: 'warning',
                            clickHandler: {
                                doAction() {
-                                   clearFieldData()
+                                   clearFieldData(activeFieldName.value)
                                }
                            }
                        },
@@ -236,8 +246,8 @@ export default defineComponent({
                        },
                     ]
                 )
-                if (typeof prop.activeFieldName === 'string' && prop.activeFieldName) {
-                    navTo(prop.activeFieldName)
+                if (typeof prop.activeField === 'string' && prop.activeField) {
+                    navTo(prop.activeField)
                 } else {
                     navTo('_NEXT_FIELD_')
                 }
@@ -248,20 +258,26 @@ export default defineComponent({
             immediate: true
         })
 
-        const helpText = computed(() => {
-            return getFieldDataAttr(activeField, 'helpText', false) 
-                || 'N/A'
-        })
+        const activeData = ref({} as any)
 
-        const footerBtns = computed(() => {
-            return getFieldDataAttr(activeField, 'navButtonProps', false) || []
+        watch(() => activeFieldName.value, (f) => {
+            if (f) {
+                activeData.value = getActiveFieldData()
+            }
         })
-
+        const helpText = computed(() => activeData.value.helpText || '-')
+        const fieldType = computed (() =>  activeData.value?._def?.type || '')
+        const footerBtns = computed (() => activeData.value?.navButtonProps || [])
+        const isRequired = computed (() => activeData.value?.isRequired || false)
+        const errors = computed(() => activeData.value.errors || [])
         return {
-            activeField,
+            errors,
+            isRequired,
+            activeFieldName,
             helpText,
             footerBtns,
-            setValue,
+            fieldType,
+            activeData,
             onBtnClick
         }
     }

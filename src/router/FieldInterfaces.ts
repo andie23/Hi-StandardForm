@@ -59,6 +59,8 @@ export interface FieldDataInterface {
     isDirty?: boolean;
     intLastTimeLoaded?: number;
     navButtonProps: FieldDataButtonProps[];
+    valueClearCount?: number;
+    _def: any;
 }
 
 /**

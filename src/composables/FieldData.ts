@@ -1,4 +1,4 @@
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import { 
     Option,
     FieldInterface, 
@@ -8,7 +8,7 @@ import {
 } from '@/router/FieldInterfaces'
 import { isEmpty, isEqual } from "lodash"
 
-let activeField = reactive({} as FieldInterface)
+const activeFieldName = ref('' as string)
 const fieldData = reactive({} as Record<string, FieldDataInterface>)
 
 /**
@@ -18,7 +18,7 @@ const fieldData = reactive({} as Record<string, FieldDataInterface>)
  * @returns 
  */
 async function executeHook(
-    field: any,
+    fieldName: string,
     hook:
     'updateHelpTextOnValue' |
     'dynamicHelpText' |
@@ -38,17 +38,23 @@ async function executeHook(
     'condition' |
     'beforeNext' |
     'onValueUpdate'
-    ) {
-    if (hook in field && typeof field[hook] === 'function') {
-        return field[hook](
-            {...fieldData[field.id]}, 
-            {...fieldData}
-        )
+    ) 
+    {
+        if (fieldData[fieldName] && fieldData[fieldName]._def[hook]) {
+            if (typeof fieldData[fieldName]._def[hook] === 'function') {
+                return fieldData[fieldName]._def[hook](
+                    {...fieldData[fieldName]},
+                    {...fieldData}
+                )
+            } else {
+                console.warn(`Invalid hook ${hook}`)
+            }
+        }
+        return null
     }
-}
 
 function getFieldDataAttr(
-    field: FieldInterface, 
+    fieldName: string, 
     attr: 
     'index' | 
     'computedValue' |
@@ -61,15 +67,12 @@ function getFieldDataAttr(
     'intLastTimeLoaded' |
     'formValue' |
     'navButtonProps' |
-    'isDirty',
-    useProxy=true) {
-    let val = null
-    if (useProxy && field.proxyID) { 
-        val = fieldData[field.proxyID][attr]
-    } else {
-        val = fieldData[field.id][attr]
+    'valueClearCount' |
+    'isDirty') {
+    if (fieldName in fieldData) {
+        return fieldData[fieldName][attr]
     }
-    return val
+    return null
 }
 
 /**
@@ -79,14 +82,14 @@ function getFieldDataAttr(
  * @param field 
  * @param event 
  */
-function updateButtonStates(field: FieldInterface, event: 'default' | 'onValue') {
-    const buttons = getFieldDataAttr(field, 'navButtonProps', false)
+function updateButtonStates(fieldName: string, event: 'default' | 'onValue') {
+    const buttons = getFieldDataAttr(fieldName, 'navButtonProps')
     buttons.forEach((btn: FieldDataButtonProps) => {
-        if ('state' in btn?.btnRef) {
+        if (btn.btnRef?.state) {
             const states: Record<string, any> = btn.btnRef?.state || {}
             for (const p in states) {
                 const state = states[p]
-                const data = fieldData[field.id]
+                const data = fieldData[fieldName]
                 btn[p as 'color' | 'disabled' | 'visible'] = state[event](
                     {...data},
                     {...fieldData}
@@ -102,9 +105,10 @@ function updateButtonStates(field: FieldInterface, event: 'default' | 'onValue')
  * @param attr 
  */
 function setFieldDataAttr(
-    field: FieldInterface,
+    fieldName: string,
     data: any,
     attr: 
+    'valueClearCount' |
     'computedValue' |
     'helpText' |
     'init' |
@@ -117,19 +121,14 @@ function setFieldDataAttr(
     'isDirty',
     canUpdateParentProxy = true
     ) {
-    if (attr in field) {
-        if (field.proxyID && canUpdateParentProxy) {
-            fieldData[field.proxyID] = data
+        if (fieldData[fieldName]?._def?.proxyID && canUpdateParentProxy) {
+            fieldData[fieldData[fieldName]._def.proxyID][attr] = data
         }
-        fieldData[field.id] = data
-
-    } else {
-        console.warn('Cannot set field data with no mounted field')
-    }
+        fieldData[fieldName][attr] = data
 }
 
 function updateActiveFieldListOptions(options: Option[]) {
-    setFieldDataAttr(activeField, options, 'listOptions')
+    setFieldDataAttr(activeFieldName.value, options, 'listOptions')
 }
 
 function buildAndSetFieldData(
@@ -145,7 +144,7 @@ function buildAndSetFieldData(
         const initialData: FieldDataInterface = {
             index,
             init: false,
-            helpText: '',
+            helpText: field.helpText,
             isRequired: false,
             errors: [],
             isAvailable: true,
@@ -153,7 +152,9 @@ function buildAndSetFieldData(
             listOptions: [], 
             formValue: null,
             defaultValue: null,
-            navButtonProps: []
+            navButtonProps: [],
+            valueClearCount: 0,
+            _def: field
         }
         let defaultBtns = [...footerButtons] 
         const allButtons: Record<string, FieldNavButton> = {}
@@ -180,7 +181,7 @@ function buildAndSetFieldData(
                 initialData.navButtonProps.push({
                     name: b.name,
                     index: b.index,
-                    color: 'primary',
+                    color: b.color as any,
                     disabled: false,
                     visible: true,
                     slot: b.slot || 'start',
@@ -202,32 +203,33 @@ function buildAndSetFieldData(
  * @param val 
  * @returns 
  */
-async function setValue(val: Option | Option[]) {
-    const field = { ...activeField }
+async function setActiveFieldValue(val: Option | Option[] | null) {
+    const fieldName = activeFieldName.value
 
-    if (isEmpty(field)) {
+    if (isEmpty(fieldName)) {
         return console.warn('No field is active to set value to')
     }
 
-    setFieldDataAttr(field, null, 'errors')
+    setFieldDataAttr(fieldName, null, 'errors')
 
-    const valueOk = await executeHook(field, 'onValue')
+    const valueOk = await executeHook(fieldName, 'onValue')
 
     if (valueOk != undefined && !valueOk) return
 
-    setFieldDataAttr(field, isEqual(val, getFieldDataAttr(field, 'formValue')), 'isDirty')
+    setFieldDataAttr(fieldName, isEqual(val, getFieldDataAttr(fieldName, 'formValue')), 'isDirty')
 
-    setFieldDataAttr(field, val || null, 'formValue')
+    setFieldDataAttr(fieldName, val || null, 'formValue')
 
     // Buttons should react when new value is added
-    updateButtonStates(field, 'onValue')
+    updateButtonStates(fieldName, 'onValue')
 
-    const listUpdate = await executeHook(field, 'onValueUpdate')
+    const listUpdate = await executeHook(fieldName, 'onValueUpdate')
 
-    if (listUpdate) setFieldDataAttr(field, listUpdate, 'listOptions', false)
+    if (listUpdate) setFieldDataAttr(fieldName, listUpdate, 'listOptions', false)
 
-    const helpText = await executeHook(field, 'updateHelpTextOnValue')
-    setFieldDataAttr(field, helpText || field.helpText, 'helpText')
+    const helpText = await executeHook(fieldName, 'updateHelpTextOnValue')
+
+    setFieldDataAttr(fieldName, helpText || getFieldDataAttr(fieldName, 'helpText'), 'helpText')
 }
 
 /**
@@ -236,11 +238,12 @@ async function setValue(val: Option | Option[]) {
  * @returns 
  */
 async function computeFieldData() {
-    const field = {...activeField}
+    const field = activeFieldName.value
     const val = getFieldDataAttr(field, 'formValue')
     const required = await executeHook(field, 'isRequired')
-    setFieldDataAttr(field, required || false, 'isRequired', false)
 
+    setFieldDataAttr(field, required || false, 'isRequired', false)
+  
     if (required && isEmpty(val)) {
         setFieldDataAttr(field, ["Field can't be empty"], 'errors', false)
         return false
@@ -257,13 +260,12 @@ async function computeFieldData() {
     return true
 }
 
-function clearFieldData() {
-    const field = {...activeField}
-    if (!isEmpty(field)) {
-        setFieldDataAttr(field, null, 'errors')
-        setFieldDataAttr(field, null, 'formValue')
-        setFieldDataAttr(field, null, 'computedValue')
-    }
+function clearFieldData(fieldName: string) {
+    const clearCount = getFieldDataAttr(fieldName, 'valueClearCount')
+    setFieldDataAttr(fieldName, null, 'errors')
+    setFieldDataAttr(fieldName, null, 'formValue')
+    setFieldDataAttr(fieldName, null, 'computedValue')
+    setFieldDataAttr(fieldName, clearCount + 1, 'valueClearCount')
 }
 
 /**
@@ -271,10 +273,10 @@ function clearFieldData() {
  * @param field 
  * @returns 
  */
-async function onFieldCondition(field: FieldInterface) {
+async function onFieldCondition(field: string) {
     try {
         const isAvailable = await executeHook(field, 'condition')
-        if (isAvailable === undefined || isAvailable) {
+        if (isAvailable === null || isAvailable) {
             setFieldDataAttr(field, true, 'isAvailable')
             return true
         }
@@ -294,14 +296,14 @@ async function onFieldCondition(field: FieldInterface) {
  * Manage states when changing fields on a form
  * @param newField 
 */
-async function setActiveField(newField: FieldInterface) {
-    const curField = {...activeField}
+async function setActiveField(newField: string) {
+    const curField = activeFieldName.value
 
     if (!isEmpty(curField)) {
         await executeHook(curField, 'unload')
     }
 
-    activeField = newField
+    activeFieldName.value = newField
 
     await executeHook(newField, 'onload')
 
@@ -309,9 +311,9 @@ async function setActiveField(newField: FieldInterface) {
         setFieldDataAttr(newField, true, 'init')
         const val = await executeHook(newField, 'defaultValue')
         if (typeof val === "string") {
-            await setValue({ label: val, value: val })
+            await setActiveFieldValue({ label: val, value: val })
         } else {
-            await setValue(val)
+            await setActiveFieldValue(val)
         }
     }
 
@@ -320,23 +322,33 @@ async function setActiveField(newField: FieldInterface) {
 
     const helpText = await executeHook(newField, 'dynamicHelpText')
 
-    setFieldDataAttr(newField, helpText || newField.helpText, 'helpText')
+    if (helpText != null) {
+        setFieldDataAttr(newField, helpText, 'helpText')
+    }
 
     const options = await executeHook(newField, 'options')
 
     setFieldDataAttr(newField, options || [], 'listOptions')
 
-    setFieldDataAttr(activeField, new Date().getTime(), 'intLastTimeLoaded')
+    setFieldDataAttr(activeFieldName.value, new Date().getTime(), 'intLastTimeLoaded')
+}
+
+function getActiveFieldData() {
+    if (activeFieldName.value && fieldData) {
+        return fieldData[activeFieldName.value]
+    }
+    return {}
 }
 
 export default function FieldDataComposable() {
     return {
-        activeField,
+        activeFieldName,
         fieldData,
+        getActiveFieldData,
         getFieldDataAttr,
         buildAndSetFieldData,
         executeHook,
-        setValue,
+        setActiveFieldValue,
         computeFieldData,
         clearFieldData,
         setActiveField,
