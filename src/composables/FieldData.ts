@@ -90,10 +90,12 @@ function updateButtonStates(fieldName: string, event: 'default' | 'onValue') {
             for (const p in states) {
                 const state = states[p]
                 const data = fieldData[fieldName]
-                btn[p as 'color' | 'disabled' | 'visible'] = state[event](
-                    {...data},
-                    {...fieldData}
-                )
+                if (typeof state[event] === 'function') {
+                    btn[p as 'color' | 'disabled' | 'visible'] = state[event](
+                        {...data},
+                        {...fieldData}
+                    )
+                }
             }
         }
     })
