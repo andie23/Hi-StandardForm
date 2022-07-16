@@ -12,7 +12,7 @@
 import { IonPage } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import TextInput from "@/components/TextInput.vue"
-import TextSelect from "@/components/TextSelect.vue"
+import RadioSelect from "@/components/RadioSelect.vue"
 import ItemList from "@/components/ItemList.vue"
 import MultistepForm from "@/forms/MultistepForm.vue"
 import { FieldDataInterface, FieldInterface, Option } from '@/router/FieldInterfaces';
@@ -40,7 +40,7 @@ export default defineComponent({
       {
         id: 'select_gender',
         helpText: 'Select Gender',
-        type: TextSelect,
+        type: RadioSelect,
         options: () => {
           return [
             { label: 'Male', value: 'M'},

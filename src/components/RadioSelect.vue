@@ -3,13 +3,14 @@
         <ion-input placeholder="Filter list" v-model="filter"/>
     </ion-item>
     <ion-list class="ion-padding">
-        <ion-item
-            :key="index"
-            @click="selection=item"
-            v-for="(item, index) in filtered"
-            button>
-            <ion-label> {{ item.label }} </ion-label>
-        </ion-item>
+        <ion-radio-group v-model="selection">
+            <ion-item
+                :key="index"
+                v-for="(item, index) in filtered">
+                <ion-radio slot="start" :value="item"></ion-radio>
+                <ion-label> {{ item.label }} </ion-label>
+            </ion-item>
+        </ion-radio-group>
     </ion-list>
 </template>
 <script lang="ts">
@@ -19,6 +20,8 @@ import {
     IonList,
     IonItem,
     IonLabel,
+    IonRadio,
+    IonRadioGroup
 } from "@ionic/vue"
 import FieldComposable from "@/composables/FieldData"
 import { Option } from '@/router/FieldInterfaces'
@@ -28,7 +31,9 @@ export default defineComponent({
         IonInput,
         IonList,
         IonItem,
-        IonLabel
+        IonLabel,
+        IonRadioGroup,
+        IonRadio
     },
     setup() {
         const filter = ref('')
