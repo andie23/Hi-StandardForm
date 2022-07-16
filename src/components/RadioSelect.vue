@@ -2,6 +2,13 @@
     <ion-item class="ion-padding ion-text-center" style="width:100%">
         <ion-input placeholder="Filter list" v-model="filter"/>
     </ion-item>
+    <ion-text
+        class="ion-padding"
+         v-for="(error, index) in data.errors" 
+        :key="index" 
+        color="danger"> 
+       <b> {{error}} </b>
+    </ion-text>
     <ion-list class="ion-padding">
         <ion-radio-group v-model="selection">
             <ion-item
@@ -20,6 +27,7 @@ import {
     IonList,
     IonItem,
     IonLabel,
+    IonText,
     IonRadio,
     IonRadioGroup
 } from "@ionic/vue"
@@ -32,6 +40,7 @@ export default defineComponent({
         IonList,
         IonItem,
         IonLabel,
+        IonText,
         IonRadioGroup,
         IonRadio
     },

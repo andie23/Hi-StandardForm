@@ -41,6 +41,7 @@ export default defineComponent({
         id: 'select_gender',
         helpText: 'Select Gender',
         type: RadioSelect,
+        isRequired: () => true,
         options: () => {
           return [
             { label: 'Male', value: 'M'},
