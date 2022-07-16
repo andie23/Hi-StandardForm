@@ -12,6 +12,7 @@
 import { IonPage } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import TextInput from "@/components/TextInput.vue"
+import TextSelect from "@/components/TextSelect.vue"
 import ItemList from "@/components/ItemList.vue"
 import MultistepForm from "@/forms/MultistepForm.vue"
 import { FieldDataInterface, FieldInterface, Option } from '@/router/FieldInterfaces';
@@ -37,13 +38,24 @@ export default defineComponent({
         isRequired: () => true
       },
       {
+        id: 'select_gender',
+        helpText: 'Select Gender',
+        type: TextSelect,
+        options: () => {
+          return [
+            { label: 'Male', value: 'M'},
+            { label: 'Female', value: 'F'}
+          ]
+        }
+      },
+      {
         id: 'summary',
         helpText: 'Summary',
         type: ItemList,
         options: (_, fieldData) => {
          const items: Option[] = []
          Object.values(fieldData).forEach((i: any) => {
-           if (i.isAvailable && i.formValue) {
+           if (i.isAvailable && i.formValue != null) {
             items.push({
               label: i.helpText,
               value: i.formValue.label
