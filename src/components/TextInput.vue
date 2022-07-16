@@ -1,6 +1,6 @@
 <template>
     <ion-item class="ion-padding" style="width:100%">
-        <ion-input  placeholder="Enter value" v-model="val" />
+        <ion-input :autofocus="true" placeholder="Enter value" v-model="val"/>
     </ion-item>
     <ion-text
         class="ion-padding"

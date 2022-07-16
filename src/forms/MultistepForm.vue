@@ -2,17 +2,15 @@
     <ion-page> 
         <ion-header> 
             <ion-toolbar>
-                <ion-title 
-                    :color="errors.length ? 'danger' : ''">
-                    {{ helpText }}
-                    <b v-if="isRequired">
-                        (*)
-                    </b>
+                <ion-title :color="errors.length ? 'danger' : ''">
+                    {{ helpText }} <b v-if="isRequired">(*)</b>
                 </ion-title>
             </ion-toolbar>
         </ion-header>
         <ion-content>
-            <slot :id="activeFieldName" :type="'text-input'"></slot>
+            <keep-alive>
+                <component :key="activeFieldName" v-bind:is="fieldType"/>
+            </keep-alive>
         </ion-content>
         <ion-footer>
             <ion-toolbar color="dark">

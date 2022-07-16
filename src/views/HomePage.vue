@@ -3,13 +3,7 @@
     <multistep-form
         :fields="fields"
         :onFinish="onFinish"
-        :onCancel="onCancel"        
-      >
-      <template v-slot="{id, type}"> 
-        <keep-alive>
-          <component :key="id" :is="type"/>
-        </keep-alive>
-      </template>
+        :onCancel="onCancel">
     </multistep-form>
   </ion-page>
 </template>
@@ -25,7 +19,6 @@ export default defineComponent({
   name: 'HomePage',
   components: {
     IonPage,
-    TextInput,
     MultistepForm
   },
   setup() {
@@ -33,13 +26,13 @@ export default defineComponent({
       {
         id: 'first_name',
         helpText: 'First name',
-        type: 'text-input',
+        type: TextInput,
         isRequired: () => true
       },
       {
         id: 'last_name',
         helpText: 'Last name',
-        type: 'text-input',
+        type: TextInput,
         isRequired: () => true
       }
     ]

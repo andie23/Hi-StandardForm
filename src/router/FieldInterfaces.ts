@@ -81,7 +81,7 @@ export interface FieldInterface {
     /**
      * A field to render on the form
      */
-    type: string;
+    type: any;
     /**
      * proxyID allows multiple form fields to write to the same
      * value block 
