@@ -5,7 +5,6 @@
     <ion-list class="ion-padding">
         <ion-item
             :key="index"
-            :color="selectin && selection?.label===item.label ? 'secondary' : ''"
             @click="selection=item"
             v-for="(item, index) in filtered"
             button>
