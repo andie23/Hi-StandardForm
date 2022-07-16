@@ -12,8 +12,9 @@
 import { IonPage } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import TextInput from "@/components/TextInput.vue"
+import ItemList from "@/components/ItemList.vue"
 import MultistepForm from "@/forms/MultistepForm.vue"
-import { FieldDataInterface, FieldInterface } from '@/router/FieldInterfaces';
+import { FieldDataInterface, FieldInterface, Option } from '@/router/FieldInterfaces';
 
 export default defineComponent({
   name: 'HomePage',
@@ -34,6 +35,23 @@ export default defineComponent({
         helpText: 'Last name',
         type: TextInput,
         isRequired: () => true
+      },
+      {
+        id: 'summary',
+        helpText: 'Summary',
+        type: ItemList,
+        options: (_, fieldData) => {
+         const items: Option[] = []
+         Object.values(fieldData).forEach((i: any) => {
+           if (i.isAvailable && i.formValue) {
+            items.push({
+              label: i.helpText,
+              value: i.formValue.label
+            })
+           }
+         })
+         return items
+        }
       }
     ]
     function onFinish(data: Record<string, FieldDataInterface>) {
