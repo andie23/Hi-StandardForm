@@ -7,7 +7,7 @@
                 </ion-title>
             </ion-toolbar>
         </ion-header>
-        <ion-content>
+        <ion-content :scroll-y="false">
             <keep-alive>
                 <component :key="activeFieldName" v-bind:is="fieldType"/>
             </keep-alive>
@@ -21,7 +21,6 @@
                     :slot="btn.slot"
                     :class="btn.cssClass"
                     :color="btn.color"
-                    :size="btn.size"
                     :disabled="btn.disabled"
                     @click="onBtnClick(btn)">
                 {{ btn.name }}
@@ -163,12 +162,12 @@ export default defineComponent({
 
         function goBack() {
             let initialIndex = 0
-            if (isEmpty(activeFieldName.value)) {
-                initialIndex = getFieldDataAttr(activeFieldName.value, 'index')
+            if (!isEmpty(activeFieldName.value)) {
+                initialIndex = (getFieldDataAttr(activeFieldName.value, 'index')) -1
             }
             for (let i=initialIndex; i >= 0; --i) {
                 const field = prop.fields[i]
-                if (getFieldDataAttr(activeFieldName.value, 'isAvailable')) {
+                if (getFieldDataAttr(`${field.id}`, 'isAvailable')) {
                     return setActiveField(`${field.id}`)
                 }
             }
@@ -225,6 +224,27 @@ export default defineComponent({
                            index: 21,
                            name: 'Back',
                            slot: 'end',
+                           state: {
+                               disabled: {
+                                   default(curField: any, fields: any) {
+                                        if (curField.index === 0) {
+                                           return true
+                                        }
+                                        if (curField.index > 0) {
+                                            const canBack = []
+                                            for (const k in fields) {
+                                                if (k === curField._def.id) {
+                                                    break
+                                                } else {
+                                                    canBack.push(fields[k].isAvailable)
+                                                }
+                                            }
+                                            return isEmpty(canBack) || !canBack.some(Boolean)
+                                        }
+                                        return false
+                                   }
+                               }
+                           },
                            clickHandler: {
                                doAction() {
                                     goBack()
