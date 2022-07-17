@@ -46,7 +46,7 @@ export default defineComponent({
         watch(() => data.valueClearCount, (v) => {
             if (v) data.listOptions.forEach((i: Option) => i.isChecked = false)
         })
-        watch(() => data.listOptions, (items) =>{
+        watch(() => data.listOptions, (items) => {
             const checked = items.filter((i: Option) => i.isChecked)
             if (!isEmpty(checked)) {
                 setActiveFieldValue(checked as Option[])
