@@ -15,6 +15,7 @@ import TextInput from "@/components/TextInput.vue"
 import RadioSelect from "@/components/RadioSelect.vue"
 import ItemList from "@/components/ItemList.vue"
 import MultipleSelect from "@/components/MultiSelect.vue"
+import BooleanSelect from "@/components/BooleanSelect.vue"
 import MultistepForm from "@/forms/MultistepForm.vue"
 import { FieldDataInterface, FieldInterface, Option } from '@/router/FieldInterfaces';
 
@@ -64,6 +65,18 @@ export default defineComponent({
         }
       },
       {
+        id: 'truth_detector',
+        helpText: 'Social history',
+        type: BooleanSelect,
+        options: () => {
+          return [
+            { label: "Smokes", value: '' },
+            { label: "Drinks", value: '' },
+            { label: "Married", value: '' }
+          ]
+        }
+      },
+      {
         id: 'summary',
         helpText: 'Summary',
         type: ItemList,
@@ -85,6 +98,9 @@ export default defineComponent({
            }
          })
          return items
+        },
+        navButtons: {
+          hide: ['Clear']
         }
       }
     ]

@@ -7,7 +7,7 @@
                 </ion-title>
             </ion-toolbar>
         </ion-header>
-        <ion-content :scroll-y="false">
+        <ion-content>
             <keep-alive>
                 <component :key="activeFieldName" v-bind:is="fieldType"/>
             </keep-alive>

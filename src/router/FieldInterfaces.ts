@@ -2,6 +2,7 @@ export interface Option {
     label: string | number | boolean;
     value: string | number | boolean;
     isChecked?: boolean;
+    isRequired?: boolean;
     other?: any;
 }
 
