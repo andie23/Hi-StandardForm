@@ -13,7 +13,7 @@
             </keep-alive>
         </ion-content>
         <ion-footer>
-            <ion-toolbar color="dark">
+            <ion-toolbar color="light">
                 <ion-button
                     v-for="(btn, index) in footerBtns" 
                     :key="index"
