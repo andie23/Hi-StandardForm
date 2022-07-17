@@ -20,10 +20,10 @@
             </ion-col>
             <ion-col>
                 <ion-segment v-model="item.value">
-                    <ion-segment-button :value="true" class="yes-no">
+                    <ion-segment-button :value="true">
                         YES
                     </ion-segment-button>
-                    <ion-segment-button :value="false" class="yes-no"> 
+                    <ion-segment-button :value="false"> 
                         NO
                     </ion-segment-button>
                 </ion-segment>
