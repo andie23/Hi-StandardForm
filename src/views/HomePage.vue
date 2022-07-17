@@ -14,6 +14,7 @@ import { defineComponent } from 'vue';
 import TextInput from "@/components/TextInput.vue"
 import RadioSelect from "@/components/RadioSelect.vue"
 import ItemList from "@/components/ItemList.vue"
+import MultipleSelect from "@/components/MultiSelect.vue"
 import MultistepForm from "@/forms/MultistepForm.vue"
 import { FieldDataInterface, FieldInterface, Option } from '@/router/FieldInterfaces';
 
@@ -50,17 +51,37 @@ export default defineComponent({
         }
       },
       {
+        id: 'multiple_select',
+        helpText: 'Select hobbies',
+        type: MultipleSelect,
+        options: () => {
+          return [
+            { label: 'Sports', value: 'sports', isChecked: false},
+            { label: 'Walking', value: 'Walking', isChecked: false},
+            { label: 'Cycling', value: 'Cycling', isChecked: false},
+            { label: 'Swimming', value: 'Swimming', isChecked: false}
+          ]
+        }
+      },
+      {
         id: 'summary',
         helpText: 'Summary',
         type: ItemList,
         options: (_, fieldData) => {
          const items: Option[] = []
          Object.values(fieldData).forEach((i: any) => {
-           if (i.isAvailable && i.formValue != null) {
-            items.push({
-              label: i.helpText,
-              value: i.formValue.label
-            })
+          if (i.isAvailable && i.formValue != null) {
+            if (Array.isArray(i.formValue)) {
+              i.formValue.forEach((v: Option) => items.push({
+                label: i.helpText,
+                value: v.label
+              }))
+            } else {
+              items.push({
+                label: i.helpText,
+                value: i.formValue.label
+              })
+            }
            }
          })
          return items
